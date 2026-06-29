@@ -38,12 +38,50 @@ Because the real M5 files are large and gated behind a Kaggle account, the repos
 
 ## Run it
 
+### Recommended macOS / VS Code setup
+
+From the repository root, create and activate a local virtual environment:
+
 ```bash
-pip install -r requirements.txt
-python run.py --synthetic          # full pipeline on synthetic data, ~10s
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-This generates `reports/executive_brief.md`, `reports/accuracy.csv`, and `dashboard/data.json`. Open `dashboard/index.html` to see the dashboard. To run on real M5 data, drop the three CSV files into `data/` and run `python run.py` (add `--sample-frac 0.1` to subsample for speed).
+Install the Python dependencies using the virtual environment's interpreter:
+
+```bash
+python3 -m pip install --upgrade pip
+python3 -m pip install -r requirements.txt
+```
+
+LightGBM requires OpenMP on macOS. If you see an error such as `Library not loaded: @rpath/libomp.dylib`, install `libomp` with Homebrew and rerun the pipeline:
+
+```bash
+brew install libomp
+python3 run.py --synthetic
+```
+
+In VS Code, select the virtual environment interpreter with **Cmd+Shift+P → Python: Select Interpreter → .venv**.
+
+### Run the synthetic pipeline
+
+```bash
+python3 run.py --synthetic
+```
+
+This executes the full pipeline on synthetic M5-like data and generates `reports/executive_brief.md`, `reports/accuracy.csv`, and `dashboard/data.json`. Open `dashboard/index.html` locally, or push the updated dashboard artifacts to GitHub Pages.
+
+To run on real M5 data, drop the three CSV files into `data/` and run:
+
+```bash
+python3 run.py
+```
+
+For a faster real-data test run, subsample the data:
+
+```bash
+python3 run.py --sample-frac 0.1
+```
 
 ## Why this is a system, not a notebook
 
@@ -79,10 +117,31 @@ demand-forecasting-system/
 ## Tests
 
 ```bash
-pytest tests/ -q
+python3 -m pytest tests/ -q
 ```
 
 The suite covers data validation (negative sales rejected), feature causality, temporal-split integrity, the **coherence guarantee** (aggregated levels sum to the grand total), RMSSE correctness, and the financial-translation asymmetry. CI runs the whole pipeline on synthetic data on every push.
+
+## Publish and validate the dashboard
+
+After running the synthetic pipeline, commit the refreshed README, reports, and dashboard artifact:
+
+```bash
+git status
+git add README.md reports/executive_brief.md reports/accuracy.csv dashboard/data.json
+git commit -m "docs: add mac setup and refresh forecast artifacts"
+git push
+```
+
+Then validate the live dashboard:
+
+1. Open <https://gadiel-analytics.github.io/demand-forecasting-system/>.
+2. Confirm the page loads without console errors.
+3. Confirm the 28-day forecast chart renders.
+4. Confirm the state and category sections render.
+5. Confirm the dashboard text still reports coherent forecasts and RMSSE.
+
+If GitHub Pages is still showing old data immediately after the push, wait for the Pages deployment to complete in the repository's **Actions** tab and refresh the page.
 
 ---
 
