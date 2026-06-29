@@ -1,0 +1,19 @@
+# Demand forecasting configuration
+forecast:
+  horizon_days: 28
+
+model:
+  objective: tweedie
+  tweedie_variance_power: 1.1
+  learning_rate: 0.05
+  num_leaves: 63
+  num_boost_round: 500
+
+financial:
+  # Asymmetric error penalties as a fraction of unit price.
+  understock_penalty: 1.0    # stockout: full margin lost
+  overstock_penalty: 0.25    # overstock: capital tied up / waste risk
+
+reconciliation:
+  method: bottom_up          # bottom_up | (future: mint)
+  levels: [total, state_id, store_id, cat_id, dept_id, item_store]
