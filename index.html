@@ -1,137 +1,696 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Demand Forecast — Gadiel Analytics</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<style>
-  :root{
-    --ink:#14181f; --ink-soft:#5a6472; --paper:#fbfaf7; --line:#e7e3da;
-    --accent:#2f6f4f; --accent-soft:#dcebe2; --warn:#b5642a;
-    --mono:ui-monospace,'SF Mono',Menlo,monospace;
-    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1000px;margin:0 auto;padding:40px 24px 80px}
-  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-  h1{font-size:clamp(26px,4vw,38px);font-weight:600;letter-spacing:-.01em;line-height:1.1}
-  .sub{color:var(--ink-soft);margin-top:10px;max-width:60ch;font-size:15px}
-  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:32px 0}
-  @media(max-width:720px){.cards{grid-template-columns:repeat(2,1fr)}}
-  .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px}
-  .card .label{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
-  .card .val{font-size:26px;font-weight:600;margin-top:8px;letter-spacing:-.02em}
-  .card .val.warn{color:var(--warn)}
-  .card .val.good{color:var(--accent)}
-  .panel{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;margin-bottom:18px}
-  .panel h2{font-size:13px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:500;margin-bottom:16px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
-  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft)}
-  .axis path,.axis line{stroke:var(--line)}
-  .bar{fill:var(--accent)}
-  .bar:hover{fill:#3d8a64}
-  .barlabel{font-family:var(--mono);font-size:10px;fill:var(--ink-soft)}
-  .line{fill:none;stroke:var(--accent);stroke-width:2}
-  .area{fill:var(--accent-soft);opacity:.6}
-  footer{margin-top:36px;padding-top:24px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--ink-soft);text-align:center}
-  footer a{color:var(--accent);text-decoration:none}
-  .note{font-size:13px;color:var(--ink-soft);font-style:italic;margin-top:6px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demand Forecasting System — Gadiel Analytics</title>
+
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #667085;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --good: #047857;
+      --warning: #b45309;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    h1 {
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.02;
+      margin: 10px 0 14px;
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .subtitle {
+      max-width: 830px;
+      color: #475467;
+      font-size: 18px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .topline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: #475467;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .status {
+      margin: 24px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status.error {
+      color: #b42318;
+      background: #fef3f2;
+      border: 1px solid #fecdca;
+      padding: 14px 16px;
+      border-radius: 12px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+      margin: 28px 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 17px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+      min-height: 112px;
+    }
+
+    .card.wide {
+      grid-column: span 2;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .value {
+      font-size: 27px;
+      line-height: 1.05;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .small {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      margin: 18px 0;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+
+    .chart-wrap {
+      overflow-x: auto;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      min-width: 620px;
+      height: 300px;
+    }
+
+    .axis {
+      color: #98a2b3;
+      font-size: 11px;
+    }
+
+    .axis-line {
+      stroke: #e5e7eb;
+      stroke-width: 1;
+    }
+
+    .line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .area {
+      fill: var(--accent-soft);
+      opacity: 0.8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid #eef2f6;
+      vertical-align: top;
+    }
+
+    th {
+      color: #475467;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar-list {
+      margin-top: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 92px 1fr 92px;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+
+    .bar-name {
+      font-weight: 700;
+    }
+
+    .bar-bg {
+      height: 13px;
+      background: #eef2f6;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+    }
+
+    .bar-value {
+      text-align: right;
+      color: #475467;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 10px 0 0;
+    }
+
+    .insight {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .insight strong {
+      color: var(--text);
+    }
+
+    footer {
+      color: var(--muted);
+      margin: 34px 0 8px;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 980px) {
+      body {
+        padding: 22px;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card.wide {
+        grid-column: span 1;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      body {
+        padding: 16px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-row {
+        grid-template-columns: 76px 1fr 78px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
-  <div class="eyebrow">Gadiel Analytics · Hierarchical Demand Forecasting</div>
-  <h1>28-day demand forecast</h1>
-  <p class="sub">Coherent forecasts across every planning level, translated into the revenue and forecast-error cost a planner actually decides on. Built on the M5 hierarchical retail benchmark.</p>
+  <main>
+    <header>
+      <div class="eyebrow">Gadiel Analytics · Hierarchical Demand Forecasting</div>
+      <h1>28-day coherent demand forecast</h1>
+      <p class="subtitle">
+        A production-style demand-planning system that forecasts retail demand across the hierarchy,
+        reconciles the totals, validates coherence, and translates forecast error into financial impact.
+      </p>
 
-  <div class="cards" id="cards"></div>
+      <div class="topline">
+        <span class="pill">Synthetic M5-like data</span>
+        <span class="pill">Bottom-up reconciliation</span>
+        <span class="pill">RMSSE + financial translation</span>
+        <span class="pill">GitHub Pages dashboard</span>
+      </div>
+    </header>
 
-  <div class="panel">
-    <h2>Total daily forecast — next 28 days</h2>
-    <svg id="lineChart" width="100%" height="240"></svg>
-  </div>
+    <div id="status" class="status">Loading forecast data from <code>data.json</code>...</div>
 
-  <div class="grid2">
-    <div class="panel">
-      <h2>Forecast by state</h2>
-      <svg id="stateChart" width="100%" height="200"></svg>
+    <div id="summary" class="cards"></div>
+
+    <div class="grid">
+      <section>
+        <h2>Total daily forecast</h2>
+        <div class="chart-wrap">
+          <svg id="daily-chart" viewBox="0 0 760 300" role="img" aria-label="Daily forecast line chart"></svg>
+        </div>
+        <p class="note">
+          Forecast horizon: next 28 days. The published values are the reconciled grand-total forecast.
+        </p>
+      </section>
+
+      <section>
+        <h2>System checks</h2>
+        <div id="checks"></div>
+        <div class="insight">
+          <strong>Coherence guarantee:</strong>
+          state totals and category totals reconcile back to the grand total before publication.
+        </div>
+      </section>
     </div>
-    <div class="panel">
-      <h2>Forecast by category</h2>
-      <svg id="catChart" width="100%" height="200"></svg>
+
+    <div class="grid">
+      <section>
+        <h2>Forecast by state</h2>
+        <div id="state-bars" class="bar-list"></div>
+      </section>
+
+      <section>
+        <h2>Forecast by category</h2>
+        <div id="category-bars" class="bar-list"></div>
+      </section>
     </div>
-  </div>
-  <p class="note">Forecasts are coherent: state and category totals each sum to the grand total. Accuracy is reported as RMSSE — below 1.0 beats a naive forecast.</p>
 
-  <footer>
-    <p>Gadiel Analytics · Decision-System Architect · Author of <em>The Analytics System</em></p>
-    <p style="margin-top:6px"><a href="https://gadielanalytics.com">gadielanalytics.com</a> · <a href="https://theanalyticssystem.com">theanalyticssystem.com</a></p>
-  </footer>
-</div>
+    <section>
+      <h2>Daily forecast table</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th class="num">Forecast units</th>
+          </tr>
+        </thead>
+        <tbody id="daily-table"></tbody>
+      </table>
+    </section>
 
-<script>
-const fmt = d3.format(",.0f");
-const fmtMoney = d => "$" + d3.format(",.0f")(d);
+    <footer>
+      <strong>Gadiel Guadarrama, M.Sc.</strong> — Decision-System Architect · Author of
+      <em>The Analytics System</em><br />
+      <a href="https://gadielanalytics.com">gadielanalytics.com</a> ·
+      <a href="https://theanalyticssystem.com">theanalyticssystem.com</a> ·
+      <a href="mailto:hello@gadielanalytics.com">hello@gadielanalytics.com</a>
+    </footer>
+  </main>
 
-d3.json("data.json").then(render).catch(err => {
-  document.getElementById("cards").innerHTML =
-    '<div class="card"><div class="label">No data</div><div class="val">—</div><div class="note">Run <code>python run.py</code> to generate data.json</div></div>';
-});
+  <script>
+    const fmtNumber = new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 0
+    });
 
-function render(d){
-  const s = d.summary;
-  const cards = [
-    {label:"Expected units", val:fmt(s.expected_units), cls:""},
-    {label:"Expected revenue", val:fmtMoney(s.expected_revenue), cls:"good"},
-    {label:"Forecast-error cost", val:fmtMoney(s.forecast_error_cost), cls:"warn"},
-    {label:"Mean RMSSE", val:d.mean_rmsse, cls:"good"},
-  ];
-  d3.select("#cards").selectAll(".card").data(cards).join("div").attr("class","card")
-    .html(c => `<div class="label">${c.label}</div><div class="val ${c.cls}">${c.val}</div>`);
+    const fmtDecimal = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3
+    });
 
-  lineChart(d.total_daily);
-  barChart("#stateChart", d.forecast_by_state);
-  barChart("#catChart", d.forecast_by_category);
-}
+    const fmtMoney = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    });
 
-function lineChart(data){
-  const svg = d3.select("#lineChart");
-  const W = svg.node().clientWidth, H = 240, m = {t:10,r:14,b:28,l:48};
-  svg.selectAll("*").remove();
-  data = data.map(r => ({date:new Date(r.date), v:r.forecast}));
-  const x = d3.scaleTime().domain(d3.extent(data,d=>d.date)).range([m.l,W-m.r]);
-  const y = d3.scaleLinear().domain([0,d3.max(data,d=>d.v)*1.1]).range([H-m.b,m.t]);
-  const area = d3.area().x(d=>x(d.date)).y0(H-m.b).y1(d=>y(d.v)).curve(d3.curveMonotoneX);
-  const line = d3.line().x(d=>x(d.date)).y(d=>y(d.v)).curve(d3.curveMonotoneX);
-  svg.append("path").datum(data).attr("class","area").attr("d",area);
-  svg.append("path").datum(data).attr("class","line").attr("d",line);
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`)
-     .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")));
-  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`)
-     .call(d3.axisLeft(y).ticks(5).tickFormat(fmt));
-}
+    const fmtPct = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
 
-function barChart(sel, obj){
-  const svg = d3.select(sel);
-  const W = svg.node().clientWidth, H = 200, m = {t:10,r:14,b:28,l:48};
-  svg.selectAll("*").remove();
-  const data = Object.entries(obj).map(([k,v])=>({k,v}));
-  const x = d3.scaleBand().domain(data.map(d=>d.k)).range([m.l,W-m.r]).padding(0.3);
-  const y = d3.scaleLinear().domain([0,d3.max(data,d=>d.v)*1.1]).range([H-m.b,m.t]);
-  svg.selectAll(".bar").data(data).join("rect").attr("class","bar")
-     .attr("x",d=>x(d.k)).attr("y",d=>y(d.v))
-     .attr("width",x.bandwidth()).attr("height",d=>H-m.b-y(d.v)).attr("rx",3);
-  svg.selectAll(".barlabel").data(data).join("text").attr("class","barlabel")
-     .attr("x",d=>x(d.k)+x.bandwidth()/2).attr("y",d=>y(d.v)-5)
-     .attr("text-anchor","middle").text(d=>fmt(d.v));
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`)
-     .call(d3.axisBottom(x));
-  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`)
-     .call(d3.axisLeft(y).ticks(4).tickFormat(fmt));
-}
-</script>
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getTotalDaily(data) {
+      return data.total_daily || data.daily_forecast || data.forecast_daily || [];
+    }
+
+    function getSummary(data) {
+      const totalDaily = getTotalDaily(data);
+      const expectedUnits =
+        data.summary?.expected_units ??
+        data.expected_units ??
+        totalDaily.reduce((sum, row) => sum + Number(row.forecast || row.yhat || row.units || 0), 0);
+
+      return {
+        forecastHorizonDays:
+          data.summary?.forecast_horizon_days ??
+          data.forecast_horizon_days ??
+          totalDaily.length,
+        expectedUnits,
+        expectedRevenue:
+          data.summary?.expected_revenue ??
+          data.expected_revenue ??
+          data.revenue,
+        forecastErrorCost:
+          data.summary?.forecast_error_cost ??
+          data.forecast_error_cost ??
+          data.error_cost,
+        errorCostPctOfRevenue:
+          data.summary?.error_cost_pct_of_revenue ??
+          data.error_cost_pct_of_revenue,
+        meanRmsse:
+          data.mean_rmsse ??
+          data.summary?.mean_rmsse ??
+          data.rmsse
+      };
+    }
+
+    function card(label, value, note = "") {
+      return `
+        <article class="card wide">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${value}</div>
+          ${note ? `<div class="small">${escapeHtml(note)}</div>` : ""}
+        </article>
+      `;
+    }
+
+    function renderSummary(data) {
+      const summary = getSummary(data);
+
+      document.getElementById("summary").innerHTML = [
+        card("Forecast horizon", `${fmtNumber.format(summary.forecastHorizonDays)} days`),
+        card("Expected units", fmtNumber.format(summary.expectedUnits)),
+        card(
+          "Expected revenue",
+          summary.expectedRevenue == null ? "—" : fmtMoney.format(summary.expectedRevenue)
+        ),
+        card(
+          "Forecast-error cost",
+          summary.forecastErrorCost == null ? "—" : fmtMoney.format(summary.forecastErrorCost)
+        ),
+        card(
+          "Error cost / revenue",
+          summary.errorCostPctOfRevenue == null ? "—" : `${fmtPct.format(summary.errorCostPctOfRevenue)}%`
+        ),
+        card(
+          "Mean RMSSE",
+          summary.meanRmsse == null ? "—" : fmtDecimal.format(summary.meanRmsse),
+          "Below 1.0 beats a naive forecast."
+        )
+      ].join("");
+    }
+
+    function normalizeDaily(row) {
+      return {
+        date: row.date || row.ds || row.day || row.d || "",
+        forecast: Number(row.forecast ?? row.yhat ?? row.units ?? row.value ?? 0)
+      };
+    }
+
+    function renderDailyTable(data) {
+      const rows = getTotalDaily(data).map(normalizeDaily);
+
+      document.getElementById("daily-table").innerHTML = rows.map(row => `
+        <tr>
+          <td>${escapeHtml(row.date)}</td>
+          <td class="num">${fmtNumber.format(row.forecast)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderBars(targetId, values) {
+      const container = document.getElementById(targetId);
+
+      if (!values || Object.keys(values).length === 0) {
+        container.innerHTML = `<p class="note">No data available.</p>`;
+        return;
+      }
+
+      const entries = Object.entries(values)
+        .map(([name, value]) => [name, Number(value)])
+        .sort((a, b) => b[1] - a[1]);
+
+      const max = Math.max(...entries.map(([, value]) => value), 1);
+
+      container.innerHTML = entries.map(([name, value]) => `
+        <div class="bar-row">
+          <div class="bar-name">${escapeHtml(name)}</div>
+          <div class="bar-bg">
+            <div class="bar" style="width: ${(value / max) * 100}%"></div>
+          </div>
+          <div class="bar-value">${fmtNumber.format(value)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderChecks(data) {
+      const summary = getSummary(data);
+      const stateTotal = Object.values(data.forecast_by_state || {})
+        .reduce((sum, value) => sum + Number(value), 0);
+      const categoryTotal = Object.values(data.forecast_by_category || {})
+        .reduce((sum, value) => sum + Number(value), 0);
+
+      const expectedUnits = Number(summary.expectedUnits || 0);
+      const stateGap = Math.abs(stateTotal - expectedUnits);
+      const categoryGap = Math.abs(categoryTotal - expectedUnits);
+      const tolerance = Math.max(1e-6, expectedUnits * 0.001);
+
+      const stateStatus = stateGap <= tolerance ? "Pass" : "Check";
+      const categoryStatus = categoryGap <= tolerance ? "Pass" : "Check";
+
+      document.getElementById("checks").innerHTML = `
+        <table>
+          <tbody>
+            <tr>
+              <th>State reconciliation</th>
+              <td class="num">${stateStatus}</td>
+            </tr>
+            <tr>
+              <th>Category reconciliation</th>
+              <td class="num">${categoryStatus}</td>
+            </tr>
+            <tr>
+              <th>State total</th>
+              <td class="num">${fmtNumber.format(stateTotal)}</td>
+            </tr>
+            <tr>
+              <th>Category total</th>
+              <td class="num">${fmtNumber.format(categoryTotal)}</td>
+            </tr>
+            <tr>
+              <th>Grand total</th>
+              <td class="num">${fmtNumber.format(expectedUnits)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderDailyChart(data) {
+      const svg = document.getElementById("daily-chart");
+      const rows = getTotalDaily(data).map(normalizeDaily);
+
+      if (!rows.length) {
+        svg.innerHTML = `<text x="24" y="40" fill="#667085">No daily forecast data available.</text>`;
+        return;
+      }
+
+      const width = 760;
+      const height = 300;
+      const margin = { top: 24, right: 24, bottom: 46, left: 58 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+
+      const values = rows.map(row => row.forecast);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const yMin = Math.max(0, min - (max - min || max) * 0.12);
+      const yMax = max + (max - min || max) * 0.12;
+
+      const x = index => margin.left + (index / Math.max(rows.length - 1, 1)) * innerWidth;
+      const y = value => margin.top + (1 - ((value - yMin) / Math.max(yMax - yMin, 1))) * innerHeight;
+
+      const linePoints = rows.map((row, index) => `${x(index)},${y(row.forecast)}`).join(" ");
+      const areaPoints = [
+        `${x(0)},${margin.top + innerHeight}`,
+        ...rows.map((row, index) => `${x(index)},${y(row.forecast)}`),
+        `${x(rows.length - 1)},${margin.top + innerHeight}`
+      ].join(" ");
+
+      const ticks = 4;
+      const yTicks = Array.from({ length: ticks + 1 }, (_, index) => {
+        const value = yMin + ((yMax - yMin) / ticks) * index;
+        return {
+          value,
+          y: y(value)
+        };
+      });
+
+      const xTickIndexes = [0, 7, 14, 21, rows.length - 1]
+        .filter((value, index, array) => value < rows.length && array.indexOf(value) === index);
+
+      svg.innerHTML = `
+        ${yTicks.map(tick => `
+          <line class="axis-line" x1="${margin.left}" x2="${width - margin.right}" y1="${tick.y}" y2="${tick.y}"></line>
+          <text class="axis" x="${margin.left - 10}" y="${tick.y + 4}" text-anchor="end">
+            ${fmtNumber.format(tick.value)}
+          </text>
+        `).join("")}
+
+        <polyline class="area" points="${areaPoints}"></polyline>
+        <polyline class="line" points="${linePoints}"></polyline>
+
+        ${rows.map((row, index) => `
+          <circle cx="${x(index)}" cy="${y(row.forecast)}" r="3.5" fill="#2563eb">
+            <title>${escapeHtml(row.date)}: ${fmtNumber.format(row.forecast)} units</title>
+          </circle>
+        `).join("")}
+
+        ${xTickIndexes.map(index => `
+          <text class="axis" x="${x(index)}" y="${height - 18}" text-anchor="middle">
+            ${escapeHtml(rows[index].date)}
+          </text>
+        `).join("")}
+      `;
+    }
+
+    async function loadDashboard() {
+      const status = document.getElementById("status");
+
+      try {
+        const response = await fetch("data.json", { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error(`data.json returned HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        status.textContent = "";
+
+        renderSummary(data);
+        renderDailyChart(data);
+        renderDailyTable(data);
+        renderBars("state-bars", data.forecast_by_state);
+        renderBars("category-bars", data.forecast_by_category);
+        renderChecks(data);
+      } catch (error) {
+        status.className = "status error";
+        status.innerHTML = `
+          <strong>Dashboard data failed to load.</strong><br />
+          ${escapeHtml(error.message)}<br />
+          Make sure <code>data.json</code> is committed in the same folder as this <code>index.html</code>.
+        `;
+      }
+    }
+
+    loadDashboard();
+  </script>
 </body>
 </html>

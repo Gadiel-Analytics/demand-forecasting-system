@@ -1,6 +1,11 @@
-
+cat > .gitignore <<'EOF'
 # Local Python environment
 .venv/
+
+# Python cache
 __pycache__/
 *.pyc
+
+# macOS
 .DS_Store
+EOF

@@ -147,7 +147,7 @@ def write_dashboard_data(summary, accuracy, reconciled, fin) -> None:
         "forecast_by_category": by_cat,
         "total_daily": total_series,
     }
-    Path("dashboard/data.json").write_text(json.dumps(payload, indent=2))
+    Path("data.json").write_text(json.dumps(payload, indent=2))
 
 
 if __name__ == "__main__":
